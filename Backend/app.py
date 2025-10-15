@@ -1,0 +1,63 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+from tensorflow.keras.preprocessing import image
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+import json
+from PIL import Image
+import io, os
+
+app = Flask(__name__)
+CORS(app)
+
+# -------- LOAD MODEL --------
+print("🧠 Loading ResNet50 model...")
+model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
+
+# -------- LOAD DATA --------
+with open('database/products.json', 'r') as f:
+    products = json.load(f)
+
+# Load precomputed features
+product_features = np.load('processed_images.npy', allow_pickle=True)
+
+# Ensure shape is (n_samples, n_features)
+if product_features.ndim > 2:
+    product_features = product_features.reshape(product_features.shape[0], -1)
+
+# -------- FEATURE EXTRACTION FOR UPLOADED IMAGE --------
+def extract_features(img_bytes):
+    img = Image.open(io.BytesIO(img_bytes)).convert('RGB').resize((224, 224))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+    features = model.predict(x)
+    return features.flatten()
+
+# -------- ROUTES --------
+@app.route('/')
+def home():
+    return jsonify({"message": "✅ Visual Product Matcher API running!"})
+
+@app.route('/match', methods=['POST'])
+def match():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image uploaded'}), 400
+
+    img_bytes = request.files['image'].read()
+    query_features = extract_features(img_bytes).reshape(1, -1)
+
+    similarities = cosine_similarity(query_features, product_features)[0]
+    top_indices = similarities.argsort()[-6:][::-1]
+
+    results = [
+        {**products[i], 'similarity': round(float(similarities[i]) * 100, 2)}
+        for i in top_indices
+    ]
+
+    return jsonify(results)
+
+# -------- RUN APP --------
+if __name__ == '__main__':
+    app.run(debug=True)
