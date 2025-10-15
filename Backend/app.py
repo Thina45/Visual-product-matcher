@@ -9,7 +9,12 @@ from PIL import Image
 import io, os
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://visual-product-matcher-pqbxfb7u5-thina45s-projects.vercel.app"]}})
+
+# ✅ Allow CORS only for your Vercel frontend
+CORS(app, resources={r"/*": {"origins": [
+    "https://visual-product-matcher-bgetnflmf-thina45s-projects.vercel.app"
+]}})
+
 # -------- LOAD MODEL --------
 print("🧠 Loading ResNet50 model...")
 model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
