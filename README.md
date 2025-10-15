@@ -162,14 +162,10 @@ Add search filters and categories
 
 P Thinakaran
 📍 MCA Student at VIT Vellore
-💼 GitHub
- | LinkedIn
+
 
 ⭐ If you found this project helpful, give it a star!
 
 “Turning pixels into insights — one image at a time.”
 
 
----
-
-Would you like me to add **badges** (e.g., “Made with Flask”, “Deployed on Render”, “Frontend: Vercel”, etc.) to
