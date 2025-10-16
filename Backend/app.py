@@ -6,31 +6,26 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import json
 from PIL import Image
-import io, os
+import io
 
 app = Flask(__name__)
 
-# ✅ Allow CORS only for your stable Vercel frontend (no trailing slash)
+# ✅ Fixed CORS setup
 CORS(app, resources={r"/*": {"origins": [
-    "https://visualmatcher1.vercel.app"
-]}})
+    "https://visualmatcher1.vercel.app",
+    "http://localhost:3000"
+]}}, supports_credentials=True)
 
-# -------- LOAD MODEL --------
 print("🧠 Loading MobileNetV2 model (lightweight)...")
 model = MobileNetV2(weights="imagenet", include_top=False, pooling="avg")
 
-# -------- LOAD DATA --------
 with open('database/products.json', 'r') as f:
     products = json.load(f)
 
-# Load precomputed features
 product_features = np.load('processed_images.npy', allow_pickle=True)
-
-# Ensure correct shape
 if product_features.ndim > 2:
     product_features = product_features.reshape(product_features.shape[0], -1)
 
-# -------- FEATURE EXTRACTION --------
 def extract_features(img_bytes):
     try:
         img = Image.open(io.BytesIO(img_bytes)).convert("RGB").resize((224, 224))
@@ -41,9 +36,8 @@ def extract_features(img_bytes):
         return features.flatten()
     except Exception as e:
         print("❌ Feature extraction failed:", e)
-        return np.zeros((1280,))  # fallback shape for MobileNetV2 output
+        return np.zeros((1280,))
 
-# -------- ROUTES --------
 @app.route('/')
 def home():
     return jsonify({"message": "✅ Visual Product Matcher API running with MobileNetV2!"})
@@ -55,7 +49,6 @@ def match():
 
     img_bytes = request.files['image'].read()
     query_features = extract_features(img_bytes).reshape(1, -1)
-
     similarities = cosine_similarity(query_features, product_features)[0]
     top_indices = similarities.argsort()[-6:][::-1]
 
@@ -63,9 +56,7 @@ def match():
         {**products[i], 'similarity': round(float(similarities[i]) * 100, 2)}
         for i in top_indices
     ]
-
     return jsonify(results)
 
-# -------- RUN APP --------
 if __name__ == '__main__':
     app.run(debug=True)
