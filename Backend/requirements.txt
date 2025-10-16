@@ -1,8 +1,8 @@
-Flask
-Flask-Cors
-tensorflow
+streamlit==1.28.0
+tensorflow==2.14.0
+protobuf==3.20.3
 numpy
+pillow
 scikit-learn
-Pillow
-gunicorn
-streamlit
+pandas
+
