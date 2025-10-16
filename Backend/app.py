@@ -1,62 +1,50 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+import streamlit as st
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from tensorflow.keras.preprocessing import image
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-import json
+import json, io
 from PIL import Image
-import io
 
-app = Flask(__name__)
+st.set_page_config(page_title="Visual Product Matcher", layout="wide")
 
-# ✅ Fixed CORS setup
-CORS(app, resources={r"/*": {"origins": [
-    "https://visualmatcher1.vercel.app",
-    "http://localhost:3000"
-]}}, supports_credentials=True)
+@st.cache_resource
+def load_model():
+    return MobileNetV2(weights="imagenet", include_top=False, pooling="avg")
 
-print("🧠 Loading MobileNetV2 model (lightweight)...")
-model = MobileNetV2(weights="imagenet", include_top=False, pooling="avg")
+@st.cache_data
+def load_data():
+    with open("database/products.json", "r") as f:
+        products = json.load(f)
+    product_features = np.load("processed_images.npy", allow_pickle=True)
+    if product_features.ndim > 2:
+        product_features = product_features.reshape(product_features.shape[0], -1)
+    return products, product_features
 
-with open('database/products.json', 'r') as f:
-    products = json.load(f)
-
-product_features = np.load('processed_images.npy', allow_pickle=True)
-if product_features.ndim > 2:
-    product_features = product_features.reshape(product_features.shape[0], -1)
+model = load_model()
+products, product_features = load_data()
 
 def extract_features(img_bytes):
-    try:
-        img = Image.open(io.BytesIO(img_bytes)).convert("RGB").resize((224, 224))
-        x = image.img_to_array(img)
-        x = np.expand_dims(x, axis=0)
-        x = preprocess_input(x)
-        features = model.predict(x, verbose=0)
-        return features.flatten()
-    except Exception as e:
-        print("❌ Feature extraction failed:", e)
-        return np.zeros((1280,))
+    img = Image.open(io.BytesIO(img_bytes)).convert("RGB").resize((224, 224))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+    return model.predict(x, verbose=0).flatten()
 
-@app.route('/')
-def home():
-    return jsonify({"message": "✅ Visual Product Matcher API running with MobileNetV2!"})
+st.title("🖼️ Visual Product Matcher")
+uploaded = st.file_uploader("Upload a product image:", type=["jpg", "jpeg", "png"])
 
-@app.route('/match', methods=['POST'])
-def match():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image uploaded'}), 400
+if uploaded:
+    st.image(uploaded, caption="Uploaded Image", width=300)
+    features = extract_features(uploaded.read()).reshape(1, -1)
+    sims = cosine_similarity(features, product_features)[0]
+    top_idx = sims.argsort()[-6:][::-1]
 
-    img_bytes = request.files['image'].read()
-    query_features = extract_features(img_bytes).reshape(1, -1)
-    similarities = cosine_similarity(query_features, product_features)[0]
-    top_indices = similarities.argsort()[-6:][::-1]
-
-    results = [
-        {**products[i], 'similarity': round(float(similarities[i]) * 100, 2)}
-        for i in top_indices
-    ]
-    return jsonify(results)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    st.subheader("🔍 Top Matching Products:")
+    cols = st.columns(3)
+    for i, idx in enumerate(top_idx):
+        with cols[i % 3]:
+            st.image(f"static/product_images/{products[idx]['image']}", width=200)
+            st.write(products[idx]['name'])
+            st.write(f"Category: {products[idx]['category']}")
+            st.write(f"Similarity: {round(float(sims[idx]) * 100, 2)}%")

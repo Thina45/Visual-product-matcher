@@ -1,38 +1,39 @@
+import os
+import json
 import numpy as np
-import os, json
-from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from tensorflow.keras.preprocessing import image
-from PIL import Image
+
+# Base directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IMG_DIR = os.path.join(BASE_DIR, "static\product_images")
 
 # Load model
-print("🧠 Loading ResNet50 model...")
-model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
+model = MobileNetV2(weights="imagenet", include_top=False, pooling="avg")
 
-# Paths
-data_dir = "V:/D/WebDevelopment/Unthinkable/Visual Product matcher/Backend/static/product_images"  # folder with product images
-json_path = "database/products.json"
-output_path = "processed_images.npy"
-
-# Load product metadata
-with open(json_path) as f:
+# Load products
+with open(os.path.join(BASE_DIR, "database", "products.json"), "r") as f:
     products = json.load(f)
 
 features = []
 
-print("⚙️ Extracting features...")
-for prod in products:
-    img_path = os.path.join(data_dir, prod["image"])
-    try:
-        img = Image.open(img_path).convert("RGB").resize((224, 224))
-        x = image.img_to_array(img)
-        x = np.expand_dims(x, axis=0)
-        x = preprocess_input(x)
-        feat = model.predict(x)
-        features.append(feat.flatten())
-    except Exception as e:
-        print(f"❌ Error processing {img_path}: {e}")
+for p in products:
+    img_path = os.path.join(IMG_DIR, p["image"])
 
-# Save all features
+    if not os.path.exists(img_path):
+        print(f"⚠️ Missing image: {img_path}")
+        features.append(np.zeros((1280,)))
+        continue
+
+    img = image.load_img(img_path, target_size=(224, 224))
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array = preprocess_input(img_array)
+
+    feat = model.predict(img_array)
+    features.append(feat.flatten())
+
 features = np.array(features)
-np.save(output_path, features)
-print(f"✅ Saved {len(features)} features to {output_path}")
+np.save(os.path.join(BASE_DIR, "processed_images.npy"), features)
+
+print("✅ Feature extraction complete and saved!")

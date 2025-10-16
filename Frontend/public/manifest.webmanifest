@@ -1,8 +1,0 @@
-{
-  "name": "Visual Product Matcher",
-  "short_name": "Matcher",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "description": "A visual product matching app"
-}
