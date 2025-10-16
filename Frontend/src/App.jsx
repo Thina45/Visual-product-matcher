@@ -13,7 +13,10 @@ function App() {
     formData.append("image", file);
 
     try {
-      const res = await axios.post("http://127.0.0.1:5000/match", formData);
+      const res = await axios.post(
+        "https://visual-product-matcher-1-8jsy.onrender.com/match",
+        formData
+      );
       setResults(res.data);
     } catch (err) {
       console.error(err);
@@ -53,7 +56,7 @@ function App() {
             className="bg-white shadow-md rounded-lg p-3 text-center"
           >
             <img
-              src={`http://127.0.0.1:5000/static/product_images/${r.image}`}
+              src={`https://visual-product-matcher-1-8jsy.onrender.com/static/product_images/${r.image}`}
               alt={r.name}
               className="w-full h-48 object-cover rounded"
             />
