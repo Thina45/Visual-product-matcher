@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 # ✅ Allow CORS only for your Vercel frontend
 CORS(app, resources={r"/*": {"origins": [
-    "https://visual-product-matcher-bgetnflmf-thina45s-projects.vercel.app"
+    'https://visual-product-matcher-thina45-thina45s-projects.vercel.app/',
 ]}})
 
 # -------- LOAD MODEL --------
