@@ -10,9 +10,9 @@ import io, os
 
 app = Flask(__name__)
 
-# ✅ Allow CORS only for your Vercel frontend (no trailing slash)
+# ✅ Allow CORS only for your stable Vercel frontend (no trailing slash)
 CORS(app, resources={r"/*": {"origins": [
-    "https://visual-product-matcher-jade.vercel.app/"
+    "https://visualmatcher1.vercel.app"
 ]}})
 
 # -------- LOAD MODEL --------
