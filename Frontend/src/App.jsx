@@ -14,7 +14,7 @@ function App() {
 
     try {
       const res = await axios.post(
-        "https://visual-product-matcher-1-8jsy.onrender.com/match",
+        "https://visual-product-matcher-ny0u.onrender.com/match",
         formData
       );
       setResults(res.data);
@@ -56,7 +56,7 @@ function App() {
             className="bg-white shadow-md rounded-lg p-3 text-center"
           >
             <img
-              src={`https://visual-product-matcher-1-8jsy.onrender.com/static/product_images/${r.image}`}
+              src={`https://visual-product-matcher-ny0u.onrender.com/static/product_images/${r.image}`}
               alt={r.name}
               className="w-full h-48 object-cover rounded"
             />
