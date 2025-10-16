@@ -1,6 +1,7 @@
 streamlit==1.25.0
-tensorflow-cpu==2.15.0 # Newer TF for better protobuf compatibility
+tensorflow-cpu==2.15.0 # This version should solve the protobuf conflict
 numpy==1.23.5
 scikit-learn==1.2.2
 Pillow==9.5.0
 requests==2.31.0
+# No explicit protobuf pinning!
