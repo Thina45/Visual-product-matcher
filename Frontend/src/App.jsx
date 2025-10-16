@@ -59,6 +59,7 @@ function App() {
               src={`https://visual-product-matcher-ny0u.onrender.com/static/product_images/${r.image}`}
               alt={r.name}
               className="w-full h-48 object-cover rounded"
+              
             />
             <h3 className="mt-2 font-semibold">{r.name}</h3>
             <p className="text-gray-500">{r.category}</p>
