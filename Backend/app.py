@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from tensorflow.keras.preprocessing import image
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -10,14 +10,14 @@ import io, os
 
 app = Flask(__name__)
 
-# ✅ Allow CORS only for your Vercel frontend
+# ✅ Allow CORS only for your Vercel frontend (no trailing slash)
 CORS(app, resources={r"/*": {"origins": [
-    'https://visual-product-matcher-thina45-thina45s-projects.vercel.app/',
+    "https://visual-product-matcher-jade.vercel.app/"
 ]}})
 
 # -------- LOAD MODEL --------
-print("🧠 Loading ResNet50 model...")
-model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
+print("🧠 Loading MobileNetV2 model (lightweight)...")
+model = MobileNetV2(weights="imagenet", include_top=False, pooling="avg")
 
 # -------- LOAD DATA --------
 with open('database/products.json', 'r') as f:
@@ -26,23 +26,27 @@ with open('database/products.json', 'r') as f:
 # Load precomputed features
 product_features = np.load('processed_images.npy', allow_pickle=True)
 
-# Ensure shape is (n_samples, n_features)
+# Ensure correct shape
 if product_features.ndim > 2:
     product_features = product_features.reshape(product_features.shape[0], -1)
 
-# -------- FEATURE EXTRACTION FOR UPLOADED IMAGE --------
+# -------- FEATURE EXTRACTION --------
 def extract_features(img_bytes):
-    img = Image.open(io.BytesIO(img_bytes)).convert('RGB').resize((224, 224))
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    x = preprocess_input(x)
-    features = model.predict(x)
-    return features.flatten()
+    try:
+        img = Image.open(io.BytesIO(img_bytes)).convert("RGB").resize((224, 224))
+        x = image.img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+        x = preprocess_input(x)
+        features = model.predict(x, verbose=0)
+        return features.flatten()
+    except Exception as e:
+        print("❌ Feature extraction failed:", e)
+        return np.zeros((1280,))  # fallback shape for MobileNetV2 output
 
 # -------- ROUTES --------
 @app.route('/')
 def home():
-    return jsonify({"message": "✅ Visual Product Matcher API running!"})
+    return jsonify({"message": "✅ Visual Product Matcher API running with MobileNetV2!"})
 
 @app.route('/match', methods=['POST'])
 def match():
